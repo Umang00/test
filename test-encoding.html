@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test URL Encoding</title>
+</head>
+<body>
+    <h1>Testing URL Encoding</h1>
+    <div id="output"></div>
+
+    <script>
+        // Test data
+        const testAnswers = [
+            {questionId: 1, category: "lifestyle", value: "party"},
+            {questionId: 2, category: "communication", value: "direct"},
+            {questionId: 3, category: "romance", value: "adventurous"}
+        ];
+
+        // Encode function (from app.js)
+        function encodeAnswers(answers) {
+            const answersJSON = JSON.stringify(answers);
+            return btoa(answersJSON)
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+        }
+
+        // Decode function (from app.js)
+        function decodeAnswers(encoded) {
+            let base64 = encoded
+                .replace(/-/g, '+')
+                .replace(/_/g, '/');
+
+            while (base64.length % 4) {
+                base64 += '=';
+            }
+
+            const answersJSON = atob(base64);
+            return JSON.parse(answersJSON);
+        }
+
+        // Test it
+        console.log("Original:", testAnswers);
+
+        const encoded = encodeAnswers(testAnswers);
+        console.log("Encoded:", encoded);
+
+        const decoded = decodeAnswers(encoded);
+        console.log("Decoded:", decoded);
+
+        const match = JSON.stringify(testAnswers) === JSON.stringify(decoded);
+        console.log("Match:", match);
+
+        document.getElementById('output').innerHTML = `
+            <h2>Test Results:</h2>
+            <p><strong>Original:</strong><br><code>${JSON.stringify(testAnswers, null, 2)}</code></p>
+            <p><strong>Encoded:</strong><br><code>${encoded}</code></p>
+            <p><strong>Decoded:</strong><br><code>${JSON.stringify(decoded, null, 2)}</code></p>
+            <p><strong>Match:</strong> ${match ? '✅ SUCCESS!' : '❌ FAILED'}</p>
+            <p><strong>Example URL:</strong><br><code>yoursite.com/?data=${encoded}</code></p>
+        `;
+    </script>
+</body>
+</html>

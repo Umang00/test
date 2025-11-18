@@ -1,39 +1,47 @@
-// Compatibility Chaos - Main App Logic
+// Compatibility Chaos - Main App Logic with URL Encoding
 
 let currentQuestionIndex = 0;
 let userAnswers = [];
-let sessionId = null;
-let partnerSessionId = null;
+let partnerAnswers = null; // Will hold Person A's answers if Person B is taking quiz
+let isPartnerQuiz = false;  // Flag to check if this is Person B responding
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
-    checkForPartnerLink();
+    checkForPartnerData();
 });
 
-function checkForPartnerLink() {
+function checkForPartnerData() {
     const urlParams = new URLSearchParams(window.location.search);
-    partnerSessionId = urlParams.get('partner');
+    const encodedData = urlParams.get('data');
 
-    if (partnerSessionId) {
-        // Someone clicked a shared link
-        const partnerData = localStorage.getItem(`session_${partnerSessionId}`);
-        if (partnerData) {
-            // Partner exists, start quiz to compare
-            console.log('Partner found! Starting quiz...');
+    if (encodedData) {
+        // Person B clicked Person A's link!
+        try {
+            partnerAnswers = decodeAnswers(encodedData);
+            isPartnerQuiz = true;
+            console.log('Partner data loaded! Ready to compare.');
+
+            // Update landing page to show it's a partner quiz
+            updateLandingForPartner();
+        } catch (error) {
+            console.error('Failed to decode partner data:', error);
+            alert('Oops! This link seems broken. 😅');
         }
+    }
+}
+
+function updateLandingForPartner() {
+    const tagline = document.querySelector('.tagline');
+    if (tagline && isPartnerQuiz) {
+        tagline.textContent = 'Someone wants to know if you\'re compatible! Answer honestly... 👀';
     }
 }
 
 function startQuiz() {
     currentQuestionIndex = 0;
     userAnswers = [];
-    sessionId = generateSessionId();
     showPage('quiz-page');
     displayQuestion();
-}
-
-function generateSessionId() {
-    return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
 
 function displayQuestion() {
@@ -90,51 +98,48 @@ function selectOption(option, element) {
 }
 
 function finishQuiz() {
-    // Save user's answers
-    const userData = {
-        sessionId: sessionId,
-        answers: userAnswers,
-        timestamp: Date.now()
-    };
-
-    localStorage.setItem(sessionId, JSON.stringify(userData));
-
-    // Check if this is a response to a partner
-    if (partnerSessionId) {
-        const partnerData = JSON.parse(localStorage.getItem(partnerSessionId));
-        if (partnerData) {
-            // Calculate and show compatibility
-            calculateCompatibility(userAnswers, partnerData.answers);
-        } else {
-            // Partner data not found, show their own results
-            showWaitingPage();
-        }
+    if (isPartnerQuiz && partnerAnswers) {
+        // Person B just finished - compare with Person A
+        calculateCompatibility(partnerAnswers, userAnswers);
     } else {
-        // First person, show waiting/share page
-        showWaitingPage();
+        // Person A just finished - show share page
+        showSharePage();
     }
 }
 
-function showWaitingPage() {
-    const shareUrl = window.location.origin + window.location.pathname + '?partner=' + sessionId;
+function showSharePage() {
+    // Encode Person A's answers into URL
+    const encodedAnswers = encodeAnswers(userAnswers);
+    const shareUrl = window.location.origin + window.location.pathname + '?data=' + encodedAnswers;
+
     document.getElementById('share-link-input').value = shareUrl;
     showPage('waiting-page');
-
-    // Check periodically if partner has responded (in real app, would use backend)
-    // For now, user can manually check or we show results immediately
-    setTimeout(() => {
-        // Show some default results for demo purposes
-        calculateCompatibility(userAnswers, generateRandomAnswers());
-    }, 2000);
 }
 
-function generateRandomAnswers() {
-    // For demo: generate random partner answers
-    return questions.map(q => ({
-        questionId: q.id,
-        category: q.category,
-        value: q.options[Math.floor(Math.random() * q.options.length)].value
-    }));
+// Encode answers to base64 for URL
+function encodeAnswers(answers) {
+    const answersJSON = JSON.stringify(answers);
+    // Use btoa for base64 encoding, but make it URL-safe
+    return btoa(answersJSON)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, ''); // Remove padding
+}
+
+// Decode answers from base64
+function decodeAnswers(encoded) {
+    // Reverse URL-safe replacements
+    let base64 = encoded
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+
+    // Add padding if needed
+    while (base64.length % 4) {
+        base64 += '=';
+    }
+
+    const answersJSON = atob(base64);
+    return JSON.parse(answersJSON);
 }
 
 function calculateCompatibility(answers1, answers2) {
@@ -176,9 +181,10 @@ function calculateCompatibility(answers1, answers2) {
     // Calculate compatibility percentage
     const compatibilityScore = Math.round((matches / totalQuestions) * 100);
 
-    // Calculate chaos level (based on variety of answers)
+    // Calculate chaos level (based on variety of answers from both people)
     const uniqueValues1 = new Set(answers1.map(a => a.value)).size;
-    const chaosLevel = Math.round((uniqueValues1 / totalQuestions) * 100);
+    const uniqueValues2 = new Set(answers2.map(a => a.value)).size;
+    const chaosLevel = Math.round(((uniqueValues1 + uniqueValues2) / 2 / totalQuestions) * 100);
 
     // Display results
     displayResults(compatibilityScore, categoryMatches, goodMatches, badMatches, chaosLevel);
@@ -274,7 +280,7 @@ function animateScore(targetScore) {
 }
 
 function shareLink() {
-    const shareUrl = window.location.origin + window.location.pathname + '?partner=' + sessionId;
+    const shareUrl = document.getElementById('share-link-input').value;
 
     if (navigator.share) {
         navigator.share({
@@ -320,11 +326,17 @@ function restart() {
     showPage('landing-page');
     currentQuestionIndex = 0;
     userAnswers = [];
-    sessionId = null;
-    partnerSessionId = null;
+    partnerAnswers = null;
+    isPartnerQuiz = false;
 
     // Clear URL parameters
     window.history.pushState({}, document.title, window.location.pathname);
+
+    // Reset tagline
+    const tagline = document.querySelector('.tagline');
+    if (tagline) {
+        tagline.textContent = 'Find out if you\'re a match made in heaven... or a disaster waiting to happen 💥';
+    }
 }
 
 function showPage(pageId) {
