@@ -140,27 +140,80 @@ function selectOption(option, element) {
 // Finish quiz and show results
 async function finishQuiz() {
     if (isRespondent && currentSession) {
-        // Respondent finished - calculate compatibility
-        const creatorAnswers = currentSession.answers;
-        const compatibility = calculateCompatibility(creatorAnswers, userAnswers);
-        const personalInsights = generatePersonalInsights(userAnswers);
+        // Respondent finished - calculate compatibility and generate AI insights
+        showLoadingMessage('Calculating compatibility and generating your personality insights...');
 
-        // Save result to database
         try {
-            await saveResult(
-                currentSession.id,
-                responderName,
-                responderEmail,
-                userAnswers,
-                compatibility.score,
-                { compatibility, personalInsights }
-            );
-        } catch (error) {
-            console.error('Failed to save result:', error);
-        }
+            const creatorAnswers = currentSession.answers;
+            const compatibility = calculateCompatibility(creatorAnswers, userAnswers);
 
-        // Show results with both compatibility and personal insights
-        displayResultsForRespondent(compatibility, personalInsights, currentSession.user_name);
+            // Generate AI-powered personal insights
+            const personalInsights = await generatePersonalityInsights(userAnswers);
+
+            // Generate AI-powered compatibility analysis
+            const compatibilityAnalysis = await generateCompatibilityAnalysis(creatorAnswers, userAnswers, compatibility.score);
+
+            // Merge AI analysis with calculated scores
+            const fullAnalysis = {
+                ...compatibility,
+                aiAnalysis: compatibilityAnalysis,
+                personalInsights: personalInsights
+            };
+
+            // Save result to database
+            try {
+                await saveResult(
+                    currentSession.id,
+                    responderName,
+                    responderEmail,
+                    userAnswers,
+                    compatibility.score,
+                    fullAnalysis
+                );
+
+                // Send email notification to creator
+                if (currentSession.user_id && supabaseClient) {
+                    const { data: creator } = await supabaseClient.auth.admin.getUserById(currentSession.user_id);
+                    if (creator?.email) {
+                        await sendResponseNotification(
+                            creator.email,
+                            currentSession.user_name,
+                            responderName,
+                            compatibility.score,
+                            currentSession.share_code
+                        );
+                    }
+                }
+
+                // Send results email to respondent
+                if (responderEmail) {
+                    await sendResultsEmail(
+                        responderEmail,
+                        responderName,
+                        currentSession.user_name,
+                        compatibility.score,
+                        personalInsights.personalityType.name
+                    );
+                }
+            } catch (error) {
+                console.error('Failed to save result or send emails:', error);
+            }
+
+            hideLoadingMessage();
+
+            // Show results with AI-generated insights
+            displayResultsForRespondent(fullAnalysis, personalInsights, currentSession.user_name);
+        } catch (error) {
+            console.error('Failed to generate insights:', error);
+            hideLoadingMessage();
+
+            // Fallback to basic results
+            const creatorAnswers = currentSession.answers;
+            const compatibility = calculateCompatibility(creatorAnswers, userAnswers);
+            const basicInsights = generateBasicInsights(userAnswers);
+
+            displayResultsForRespondent(compatibility, basicInsights, currentSession.user_name);
+        }
     } else {
         // Creator finished - save session and show share link
         const userName = currentUser?.user_metadata?.name || currentUser?.email || 'Anonymous';
@@ -179,6 +232,12 @@ async function finishQuiz() {
             window.currentSessionId = sessionId;
 
             showPage('share-page');
+
+            // Send welcome email if new user
+            if (currentUser && !localStorage.getItem('welcome_email_sent_' + currentUser.id)) {
+                await sendWelcomeEmail(currentUser.email, userName);
+                localStorage.setItem('welcome_email_sent_' + currentUser.id, 'true');
+            }
         } catch (error) {
             console.error('Failed to create session:', error);
             alert('Failed to create test. Please try again.');
@@ -327,13 +386,21 @@ function displayResultsForRespondent(compatibility, insights, creatorName) {
     // Animate score
     animateScore(compatibility.score);
 
-    // Set title
-    let title = getCompatibilityTitle(compatibility.score);
-    title += ` with ${creatorName}`;
+    // Set title - use AI title if available
+    let title;
+    if (compatibility.aiAnalysis && compatibility.aiAnalysis.title) {
+        title = compatibility.aiAnalysis.title + ` with ${creatorName}`;
+    } else {
+        title = getCompatibilityTitle(compatibility.score) + ` with ${creatorName}`;
+    }
     document.getElementById('results-title').textContent = title;
 
-    // Compatibility results
-    displayCompatibilityResults(compatibility);
+    // Compatibility results - use AI analysis if available
+    if (compatibility.aiAnalysis) {
+        displayAICompatibilityResults(compatibility.aiAnalysis, compatibility);
+    } else {
+        displayCompatibilityResults(compatibility);
+    }
 
     // Personal insights section
     const shareSection = document.getElementById('share-section');
@@ -375,6 +442,58 @@ function displayResultsForRespondent(compatibility, insights, creatorName) {
     `;
 }
 
+// Display AI-generated compatibility results
+function displayAICompatibilityResults(aiAnalysis, compatibility) {
+    // Good matches - use AI strengths
+    let goodContent = '<ul>';
+    if (aiAnalysis.strengths && aiAnalysis.strengths.length > 0) {
+        aiAnalysis.strengths.forEach(strength => {
+            goodContent += `<li>${strength}</li>`;
+        });
+    } else if (compatibility.goodMatches.length > 0) {
+        // Fallback to basic matches
+        const categories = {};
+        compatibility.goodMatches.forEach(m => {
+            if (!categories[m.category]) categories[m.category] = [];
+            categories[m.category].push(m);
+        });
+        for (const [category, matches] of Object.entries(categories)) {
+            goodContent += `<li>You both vibe on <strong>${category}</strong> (${matches.length} matches!)</li>`;
+        }
+    } else {
+        goodContent += '<li>Uh... you both like oxygen? 😅</li>';
+    }
+    goodContent += '</ul>';
+    document.getElementById('good-matches').innerHTML = goodContent;
+
+    // Bad matches - use AI challenges
+    let badContent = '<ul>';
+    if (aiAnalysis.challenges && aiAnalysis.challenges.length > 0) {
+        aiAnalysis.challenges.forEach(challenge => {
+            badContent += `<li>${challenge}</li>`;
+        });
+    } else if (compatibility.badMatches.length > 0) {
+        // Fallback to basic conflicts
+        const topConflicts = compatibility.badMatches.slice(0, 5);
+        topConflicts.forEach(m => {
+            badContent += `<li>Different views on <strong>${m.category}</strong></li>`;
+        });
+        if (compatibility.badMatches.length > 5) {
+            badContent += `<li>...and ${compatibility.badMatches.length - 5} other differences 😬</li>`;
+        }
+    } else {
+        badContent += '<li>You\'re literally the same person. Kinda sus. 👀</li>';
+    }
+    badContent += '</ul>';
+    document.getElementById('bad-matches').innerHTML = badContent;
+
+    // Chaos meter
+    document.getElementById('chaos-fill').style.width = compatibility.chaosLevel + '%';
+    const chaosText = aiAnalysis.chaos_level || getChaosText(compatibility.chaosLevel);
+    document.getElementById('chaos-text').textContent = chaosText;
+}
+
+// Display basic compatibility results (fallback)
 function displayCompatibilityResults(compatibility) {
     // Good matches
     let goodContent = '<ul>';
@@ -567,6 +686,63 @@ function shareNative() {
     } else {
         copyShareLink();
     }
+}
+
+// Loading message functions
+function showLoadingMessage(message) {
+    const loadingDiv = document.getElementById('loading-overlay') || createLoadingOverlay();
+    loadingDiv.querySelector('.loading-message').textContent = message;
+    loadingDiv.style.display = 'flex';
+}
+
+function hideLoadingMessage() {
+    const loadingDiv = document.getElementById('loading-overlay');
+    if (loadingDiv) {
+        loadingDiv.style.display = 'none';
+    }
+}
+
+function createLoadingOverlay() {
+    const overlay = document.createElement('div');
+    overlay.id = 'loading-overlay';
+    overlay.className = 'loading-overlay';
+    overlay.innerHTML = `
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p class="loading-message">Loading...</p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+// Generate basic insights (fallback when LLM fails)
+function generateBasicInsights(answers) {
+    const traits = {};
+    answers.forEach(answer => {
+        const value = answer.value;
+        traits[value] = (traits[value] || 0) + 1;
+    });
+
+    return {
+        personality_type: {
+            name: "The Unique Individual 🌟",
+            description: "You have a unique blend of traits that make you who you are. Your answers show authenticity and self-awareness."
+        },
+        strengths: [
+            "You're honest with yourself",
+            "You know what you want",
+            "You're open to self-reflection",
+            "You value genuine connections"
+        ],
+        quirks: [
+            "You're complex and multifaceted",
+            "Sometimes unpredictable (in a good way!)",
+            "You don't fit into easy categories"
+        ],
+        relationship_style: "You approach relationships with authenticity and bring your whole self to connections.",
+        fun_fact: "You took this quiz, which shows curiosity about yourself and others!"
+    };
 }
 
 // Utility functions

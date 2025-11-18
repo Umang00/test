@@ -1,10 +1,10 @@
 // LLM Configuration for AI-Generated Reports
-// Supports OpenAI, Anthropic Claude, or any OpenAI-compatible API
+// Supports OpenAI, Anthropic Claude, Google Gemini, or any OpenAI-compatible API
 
 const LLM_CONFIG = {
-    provider: 'openai', // 'openai', 'anthropic', or 'custom'
+    provider: 'gemini', // 'openai', 'anthropic', 'gemini', or 'custom'
     apiKey: 'YOUR_API_KEY', // Set this in production via environment variable
-    model: 'gpt-4o-mini', // or 'gpt-4o', 'claude-3-5-sonnet-20241022', etc.
+    model: 'gemini-1.5-flash', // or 'gpt-4o-mini', 'claude-3-5-sonnet-20241022', 'gemini-1.5-pro'
     endpoint: null // Custom endpoint if using compatible API
 };
 
@@ -123,6 +123,17 @@ Return ONLY valid JSON.`;
 async function callLLM(prompt) {
     const endpoint = LLM_CONFIG.endpoint || getDefaultEndpoint();
 
+    if (LLM_CONFIG.provider === 'gemini') {
+        return await callGemini(prompt, endpoint);
+    } else if (LLM_CONFIG.provider === 'anthropic') {
+        return await callAnthropic(prompt, endpoint);
+    } else {
+        return await callOpenAI(prompt, endpoint);
+    }
+}
+
+// OpenAI API call
+async function callOpenAI(prompt, endpoint) {
     const requestBody = {
         model: LLM_CONFIG.model,
         messages: [
@@ -145,11 +156,74 @@ async function callLLM(prompt) {
     });
 
     if (!response.ok) {
-        throw new Error(`LLM API error: ${response.status}`);
+        throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
     return data.choices[0].message.content;
+}
+
+// Anthropic Claude API call
+async function callAnthropic(prompt, endpoint) {
+    const requestBody = {
+        model: LLM_CONFIG.model,
+        messages: [
+            {
+                role: 'user',
+                content: prompt
+            }
+        ],
+        temperature: 0.8,
+        max_tokens: 1500
+    };
+
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': LLM_CONFIG.apiKey,
+            'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Anthropic API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.content[0].text;
+}
+
+// Google Gemini API call
+async function callGemini(prompt, endpoint) {
+    const requestBody = {
+        contents: [{
+            parts: [{
+                text: prompt
+            }]
+        }],
+        generationConfig: {
+            temperature: 0.8,
+            maxOutputTokens: 1500,
+            responseMimeType: 'application/json'
+        }
+    };
+
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.candidates[0].content.parts[0].text;
 }
 
 function getDefaultEndpoint() {
@@ -158,6 +232,9 @@ function getDefaultEndpoint() {
             return 'https://api.openai.com/v1/chat/completions';
         case 'anthropic':
             return 'https://api.anthropic.com/v1/messages';
+        case 'gemini':
+            // Gemini endpoint includes API key in URL
+            return `https://generativelanguage.googleapis.com/v1beta/models/${LLM_CONFIG.model}:generateContent?key=${LLM_CONFIG.apiKey}`;
         default:
             return 'https://api.openai.com/v1/chat/completions';
     }
