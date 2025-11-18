@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compatibility Chaos 💥 Are You a Match or a Disaster?</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Take the wildest compatibility quiz ever! Answer 15 questions, share with your crush, and discover if you're a match or a total disaster. Brutally honest results guaranteed!">
+    <meta name="keywords" content="compatibility quiz, relationship test, crush compatibility, dating quiz, viral quiz">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://compatibility-chaos.vercel.app/">
+    <meta property="og:title" content="Compatibility Chaos 💥 Are You a Match or a Disaster?">
+    <meta property="og:description" content="Take this wild quiz and find out if you're compatible with your crush! Brutally honest results. Share your link and see the chaos unfold!">
+    <meta property="og:image" content="https://compatibility-chaos.vercel.app/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://compatibility-chaos.vercel.app/">
+    <meta property="twitter:title" content="Compatibility Chaos 💥">
+    <meta property="twitter:description" content="Think we're compatible? Take this quiz and let's find out! 🔥">
+    <meta property="twitter:image" content="https://compatibility-chaos.vercel.app/og-image.png">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Landing Page -->
+        <div id="landing-page" class="page active">
+            <div class="hero">
+                <h1 class="glitch" data-text="COMPATIBILITY CHAOS">COMPATIBILITY CHAOS</h1>
+                <p class="tagline">Find out if you're a match made in heaven... or a disaster waiting to happen 💥</p>
+                <div class="cta-buttons">
+                    <button class="btn btn-primary" onclick="startQuiz()">START THE CHAOS</button>
+                </div>
+                <div class="feature-pills">
+                    <span class="pill">15 Wild Questions</span>
+                    <span class="pill">Brutally Honest Results</span>
+                    <span class="pill">Share with Your Crush</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz Page -->
+        <div id="quiz-page" class="page">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="quiz-container">
+                <div class="question-counter">
+                    Question <span id="current-question">1</span> of <span id="total-questions">15</span>
+                </div>
+                <h2 class="question-text" id="question-text"></h2>
+                <div class="options" id="options"></div>
+            </div>
+        </div>
+
+        <!-- Results Page -->
+        <div id="results-page" class="page">
+            <div class="results-container">
+                <div class="score-circle">
+                    <div class="score-number" id="score-number">0%</div>
+                    <div class="score-label" id="score-label">COMPATIBILITY</div>
+                </div>
+
+                <h2 class="results-title" id="results-title"></h2>
+
+                <div class="results-section">
+                    <h3>🔥 Why You'd Be Amazing Together</h3>
+                    <div class="results-content" id="good-matches"></div>
+                </div>
+
+                <div class="results-section">
+                    <h3>💥 Why You'd Crash & Burn</h3>
+                    <div class="results-content" id="bad-matches"></div>
+                </div>
+
+                <div class="results-section">
+                    <h3>🎭 Your Chaos Level</h3>
+                    <div class="chaos-meter">
+                        <div class="chaos-fill" id="chaos-fill"></div>
+                    </div>
+                    <p class="chaos-text" id="chaos-text"></p>
+                </div>
+
+                <div class="share-section">
+                    <button class="btn btn-primary" onclick="shareLink()">📤 SHARE WITH YOUR CRUSH</button>
+                    <button class="btn btn-secondary" onclick="restart()">🔄 TRY AGAIN</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waiting Page (for when waiting for partner) -->
+        <div id="waiting-page" class="page">
+            <div class="waiting-container">
+                <h2>⏳ Waiting for Your Match...</h2>
+                <p class="waiting-text">Share this link and wait for them to answer!</p>
+                <div class="share-link-box">
+                    <input type="text" id="share-link-input" readonly>
+                    <button class="btn btn-small" onclick="copyLink()">COPY LINK</button>
+                </div>
+                <div class="loader"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="questions.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
