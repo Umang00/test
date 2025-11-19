@@ -11,28 +11,28 @@ let isRespondent = false;
 // Personality type definitions
 const personalityTypes = {
     adventurous_spontaneous: {
-        name: "The Wild Card 🎲",
-        description: "You're spontaneous, adventurous, and always ready for the next thrill. Life's too short for boring!"
+        name: 'The Wild Card 🎲',
+        description: 'You\'re spontaneous, adventurous, and always ready for the next thrill. Life\'s too short for boring!'
     },
     balanced_flexible: {
-        name: "The Harmonizer ⚖️",
-        description: "You seek balance in all things. Flexible yet thoughtful, you adapt while staying true to yourself."
+        name: 'The Harmonizer ⚖️',
+        description: 'You seek balance in all things. Flexible yet thoughtful, you adapt while staying true to yourself.'
     },
     practical_organized: {
-        name: "The Strategist 📋",
-        description: "You're organized, practical, and plan ahead. Stability and structure are your superpowers."
+        name: 'The Strategist 📋',
+        description: 'You\'re organized, practical, and plan ahead. Stability and structure are your superpowers.'
     },
     romantic_expressive: {
-        name: "The Romantic 💕",
-        description: "You wear your heart on your sleeve. Emotional, expressive, and deeply caring."
+        name: 'The Romantic 💕',
+        description: 'You wear your heart on your sleeve. Emotional, expressive, and deeply caring.'
     },
     independent_direct: {
-        name: "The Maverick 🦅",
-        description: "Independent and direct, you value honesty and personal freedom above all else."
+        name: 'The Maverick 🦅',
+        description: 'Independent and direct, you value honesty and personal freedom above all else.'
     },
     easygoing_social: {
-        name: "The Social Butterfly 🦋",
-        description: "Easygoing and sociable, you bring positive energy wherever you go."
+        name: 'The Social Butterfly 🦋',
+        description: 'Easygoing and sociable, you bring positive energy wherever you go.'
     }
 };
 
@@ -248,8 +248,8 @@ async function finishQuiz() {
 // Calculate compatibility between two sets of answers
 function calculateCompatibility(answers1, answers2) {
     let matches = 0;
-    let totalQuestions = answers1.length;
-    let categoryMatches = {
+    const totalQuestions = answers1.length;
+    const categoryMatches = {
         lifestyle: { matches: 0, total: 0 },
         communication: { matches: 0, total: 0 },
         romance: { matches: 0, total: 0 },
@@ -257,8 +257,8 @@ function calculateCompatibility(answers1, answers2) {
         personality: { matches: 0, total: 0 }
     };
 
-    let goodMatches = [];
-    let badMatches = [];
+    const goodMatches = [];
+    const badMatches = [];
 
     // Compare answers
     for (let i = 0; i < totalQuestions; i++) {
@@ -342,12 +342,12 @@ function generatePersonalInsights(answers) {
 function generateStrengths(answers, traits) {
     const strengths = [];
 
-    if (traits.direct >= 2) strengths.push("You value honest communication");
-    if (traits.spontaneous >= 2) strengths.push("You're adaptable and fun-loving");
-    if (traits.understanding >= 2) strengths.push("You're empathetic and patient");
-    if (traits.balanced >= 2) strengths.push("You seek harmony and balance");
-    if (traits.romantic >= 2) strengths.push("You're romantic and affectionate");
-    if (traits.practical >= 2) strengths.push("You're grounded and reliable");
+    if (traits.direct >= 2) strengths.push('You value honest communication');
+    if (traits.spontaneous >= 2) strengths.push('You\'re adaptable and fun-loving');
+    if (traits.understanding >= 2) strengths.push('You\'re empathetic and patient');
+    if (traits.balanced >= 2) strengths.push('You seek harmony and balance');
+    if (traits.romantic >= 2) strengths.push('You\'re romantic and affectionate');
+    if (traits.practical >= 2) strengths.push('You\'re grounded and reliable');
 
     return strengths.slice(0, 4);
 }
@@ -355,11 +355,11 @@ function generateStrengths(answers, traits) {
 function generateQuirks(answers, traits) {
     const quirks = [];
 
-    if (traits.avoider >= 1) quirks.push("You might dodge uncomfortable conversations");
-    if (traits.stubborn >= 1) quirks.push("You have a hard time admitting you're wrong");
-    if (traits.impulsive >= 2) quirks.push("You make decisions on a whim");
-    if (traits.intense >= 1) quirks.push("Your emotions run deep");
-    if (traits.chaotic >= 1) quirks.push("Your texting style is... unique");
+    if (traits.avoider >= 1) quirks.push('You might dodge uncomfortable conversations');
+    if (traits.stubborn >= 1) quirks.push('You have a hard time admitting you\'re wrong');
+    if (traits.impulsive >= 2) quirks.push('You make decisions on a whim');
+    if (traits.intense >= 1) quirks.push('Your emotions run deep');
+    if (traits.chaotic >= 1) quirks.push('Your texting style is... unique');
 
     return quirks.slice(0, 3);
 }
@@ -371,11 +371,11 @@ function generateRelationshipStyle(answers) {
 
     // Simple logic for demo
     if (romanceAnswers.some(a => a.value === 'adventurous')) {
-        return "You love excitement and new experiences in relationships";
+        return 'You love excitement and new experiences in relationships';
     } else if (romanceAnswers.some(a => a.value === 'romantic')) {
-        return "You appreciate traditional romance and meaningful gestures";
+        return 'You appreciate traditional romance and meaningful gestures';
     } else {
-        return "You value genuine connection over grand gestures";
+        return 'You value genuine connection over grand gestures';
     }
 }
 
@@ -666,13 +666,13 @@ function copyToClipboard(text) {
 
 function shareViaWhatsApp() {
     const url = encodeURIComponent(window.currentShareUrl);
-    const text = encodeURIComponent("Think we're compatible? Take this quiz and find out! 👀");
+    const text = encodeURIComponent('Think we\'re compatible? Take this quiz and find out! 👀');
     window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
 }
 
 function shareViaTwitter() {
     const url = encodeURIComponent(window.currentShareUrl);
-    const text = encodeURIComponent("Think you know me? Take this compatibility quiz and let's see! 💥");
+    const text = encodeURIComponent('Think you know me? Take this compatibility quiz and let\'s see! 💥');
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
 }
 
@@ -726,22 +726,22 @@ function generateBasicInsights(answers) {
 
     return {
         personality_type: {
-            name: "The Unique Individual 🌟",
-            description: "You have a unique blend of traits that make you who you are. Your answers show authenticity and self-awareness."
+            name: 'The Unique Individual 🌟',
+            description: 'You have a unique blend of traits that make you who you are. Your answers show authenticity and self-awareness.'
         },
         strengths: [
-            "You're honest with yourself",
-            "You know what you want",
-            "You're open to self-reflection",
-            "You value genuine connections"
+            'You\'re honest with yourself',
+            'You know what you want',
+            'You\'re open to self-reflection',
+            'You value genuine connections'
         ],
         quirks: [
-            "You're complex and multifaceted",
-            "Sometimes unpredictable (in a good way!)",
-            "You don't fit into easy categories"
+            'You\'re complex and multifaceted',
+            'Sometimes unpredictable (in a good way!)',
+            'You don\'t fit into easy categories'
         ],
-        relationship_style: "You approach relationships with authenticity and bring your whole self to connections.",
-        fun_fact: "You took this quiz, which shows curiosity about yourself and others!"
+        relationship_style: 'You approach relationships with authenticity and bring your whole self to connections.',
+        fun_fact: 'You took this quiz, which shows curiosity about yourself and others!'
     };
 }
 

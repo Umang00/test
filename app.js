@@ -144,8 +144,8 @@ function decodeAnswers(encoded) {
 
 function calculateCompatibility(answers1, answers2) {
     let matches = 0;
-    let totalQuestions = answers1.length;
-    let categoryMatches = {
+    const totalQuestions = answers1.length;
+    const categoryMatches = {
         lifestyle: { matches: 0, total: 0 },
         communication: { matches: 0, total: 0 },
         romance: { matches: 0, total: 0 },
@@ -153,8 +153,8 @@ function calculateCompatibility(answers1, answers2) {
         personality: { matches: 0, total: 0 }
     };
 
-    let goodMatches = [];
-    let badMatches = [];
+    const goodMatches = [];
+    const badMatches = [];
 
     // Compare answers
     for (let i = 0; i < totalQuestions; i++) {

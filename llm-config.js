@@ -170,20 +170,20 @@ function generateFallbackInsights(answers) {
 
     return {
         personality_type: {
-            name: "The Unique Individual 🌟",
-            description: "You have a unique blend of traits that make you who you are."
+            name: 'The Unique Individual 🌟',
+            description: 'You have a unique blend of traits that make you who you are.'
         },
         strengths: [
-            "You're authentic and true to yourself",
-            "You have diverse interests and perspectives",
-            "You're open to self-reflection"
+            'You\'re authentic and true to yourself',
+            'You have diverse interests and perspectives',
+            'You\'re open to self-reflection'
         ],
         quirks: [
-            "Sometimes unpredictable (keeps life interesting!)",
-            "Your own worst critic at times"
+            'Sometimes unpredictable (keeps life interesting!)',
+            'Your own worst critic at times'
         ],
-        relationship_style: "You approach relationships with honesty and authenticity.",
-        fun_fact: "You took this quiz, which shows you're curious about yourself!"
+        relationship_style: 'You approach relationships with honesty and authenticity.',
+        fun_fact: 'You took this quiz, which shows you\'re curious about yourself!'
     };
 }
 
@@ -198,16 +198,16 @@ function generateFallbackCompatibility(answers1, answers2, score) {
         title,
         summary: `You scored ${score}% compatibility based on your answers.`,
         strengths: [
-            "You both took this quiz (that's a start!)",
-            "You're both curious about compatibility",
+            'You both took this quiz (that\'s a start!)',
+            'You\'re both curious about compatibility',
             `You matched on ${Math.round(score / 100 * 15)} out of 15 questions`
         ],
         challenges: [
-            "You have different perspectives on some things",
-            "Your approaches to situations vary"
+            'You have different perspectives on some things',
+            'Your approaches to situations vary'
         ],
-        advice: "Communication and understanding differences is key to any relationship.",
-        chaos_level: "A balanced mix of similarities and differences",
+        advice: 'Communication and understanding differences is key to any relationship.',
+        chaos_level: 'A balanced mix of similarities and differences',
         bottom_line: `${score}% compatibility - make of that what you will! 😉`
     };
 }
