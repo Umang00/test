@@ -71,4 +71,111 @@ CREATE POLICY "Anyone can view results for their session" ON results
 
 CREATE POLICY "Anyone can insert results" ON results
     FOR INSERT WITH CHECK (true);
+
+-- ============================================================================
+-- GROUP COMPATIBILITY TABLES
+-- ============================================================================
+
+-- group_sessions table - tracks group quizzes
+CREATE TABLE group_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    creator_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    creator_name TEXT NOT NULL,
+    group_name TEXT NOT NULL,
+    group_code TEXT UNIQUE NOT NULL,
+    min_members INTEGER DEFAULT 3,
+    max_members INTEGER DEFAULT 10,
+    status TEXT DEFAULT 'active', -- 'active', 'closed', 'completed'
+    group_analysis JSONB, -- AI-generated group dynamics analysis
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    completed_at TIMESTAMP WITH TIME ZONE
+);
+
+-- group_members table - tracks who's in each group
+CREATE TABLE group_members (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    group_id UUID REFERENCES group_sessions(id) ON DELETE CASCADE,
+    member_name TEXT NOT NULL,
+    member_email TEXT,
+    answers JSONB, -- NULL until they complete the quiz
+    personality_analysis JSONB, -- AI-generated personality insights
+    joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    completed_at TIMESTAMP WITH TIME ZONE,
+    UNIQUE(group_id, member_name)
+);
+
+-- group_compatibility_matrix table - stores all pairwise compatibility scores
+CREATE TABLE group_compatibility_matrix (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    group_id UUID REFERENCES group_sessions(id) ON DELETE CASCADE,
+    member1_id UUID REFERENCES group_members(id) ON DELETE CASCADE,
+    member2_id UUID REFERENCES group_members(id) ON DELETE CASCADE,
+    compatibility_score INTEGER NOT NULL,
+    analysis JSONB, -- AI-generated compatibility analysis
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(member1_id, member2_id),
+    CHECK (member1_id < member2_id) -- Ensure no duplicates (A-B = B-A)
+);
+
+-- Indexes for group tables
+CREATE INDEX idx_group_sessions_creator ON group_sessions(creator_id);
+CREATE INDEX idx_group_sessions_code ON group_sessions(group_code);
+CREATE INDEX idx_group_sessions_status ON group_sessions(status);
+CREATE INDEX idx_group_members_group ON group_members(group_id);
+CREATE INDEX idx_group_members_completed ON group_members(group_id, completed_at);
+CREATE INDEX idx_compatibility_matrix_group ON group_compatibility_matrix(group_id);
+CREATE INDEX idx_compatibility_matrix_members ON group_compatibility_matrix(member1_id, member2_id);
+
+-- Row Level Security for group tables
+ALTER TABLE group_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE group_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE group_compatibility_matrix ENABLE ROW LEVEL SECURITY;
+
+-- Policies for group_sessions
+CREATE POLICY "Users can view their own group sessions" ON group_sessions
+    FOR SELECT USING (auth.uid() = creator_id);
+
+CREATE POLICY "Users can insert their own group sessions" ON group_sessions
+    FOR INSERT WITH CHECK (auth.uid() = creator_id);
+
+CREATE POLICY "Users can update their own group sessions" ON group_sessions
+    FOR UPDATE USING (auth.uid() = creator_id);
+
+CREATE POLICY "Anyone can view group sessions by code" ON group_sessions
+    FOR SELECT USING (true);
+
+-- Policies for group_members
+CREATE POLICY "Group creators can view their group members" ON group_members
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM group_sessions
+            WHERE group_sessions.id = group_members.group_id
+            AND group_sessions.creator_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Anyone can insert group members" ON group_members
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Anyone can update their own member record" ON group_members
+    FOR UPDATE USING (true);
+
+CREATE POLICY "Anyone can view group members" ON group_members
+    FOR SELECT USING (true);
+
+-- Policies for group_compatibility_matrix
+CREATE POLICY "Group creators can view compatibility matrix" ON group_compatibility_matrix
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM group_sessions
+            WHERE group_sessions.id = group_compatibility_matrix.group_id
+            AND group_sessions.creator_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Anyone can insert compatibility scores" ON group_compatibility_matrix
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Anyone can view compatibility matrix" ON group_compatibility_matrix
+    FOR SELECT USING (true);
 */
