@@ -1,23 +1,39 @@
 // LLM Configuration for AI-Generated Reports
-// Supports OpenAI, Anthropic Claude, Google Gemini, or any OpenAI-compatible API
+// Uses serverless API endpoint - API keys stored securely in environment variables
 
-const LLM_CONFIG = {
-    provider: 'gemini', // 'openai', 'anthropic', 'gemini', or 'custom'
-    apiKey: 'YOUR_API_KEY', // Set this in production via environment variable
-    model: 'gemini-1.5-flash', // or 'gpt-4o-mini', 'claude-3-5-sonnet-20241022', 'gemini-1.5-pro'
-    endpoint: null // Custom endpoint if using compatible API
-};
+// Helper function to call LLM API via our serverless function
+async function callLLMAPI(prompt, systemPrompt = null) {
+    try {
+        const response = await fetch('/api/generate-insights', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                prompt,
+                systemPrompt
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || `HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(`AI insights generated via ${data.provider} (${data.model})`);
+        return data.insights;
+    } catch (error) {
+        console.error('Failed to generate AI insights:', error);
+        throw error;
+    }
+}
 
 // Generate personality insights using LLM
 async function generatePersonalityInsights(answers) {
-    if (LLM_CONFIG.apiKey === 'YOUR_API_KEY') {
-        console.warn('LLM not configured, using fallback');
-        return generateFallbackInsights(answers);
-    }
-
     try {
         const prompt = buildPersonalityPrompt(answers);
-        const response = await callLLM(prompt);
+        const response = await callLLMAPI(prompt);
         return parsePersonalityResponse(response);
     } catch (error) {
         console.error('LLM error:', error);
@@ -27,14 +43,9 @@ async function generatePersonalityInsights(answers) {
 
 // Generate compatibility analysis using LLM
 async function generateCompatibilityAnalysis(answers1, answers2, score) {
-    if (LLM_CONFIG.apiKey === 'YOUR_API_KEY') {
-        console.warn('LLM not configured, using fallback');
-        return generateFallbackCompatibility(answers1, answers2, score);
-    }
-
     try {
         const prompt = buildCompatibilityPrompt(answers1, answers2, score);
-        const response = await callLLM(prompt);
+        const response = await callLLMAPI(prompt);
         return parseCompatibilityResponse(response);
     } catch (error) {
         console.error('LLM error:', error);
@@ -119,126 +130,6 @@ Make it:
 Return ONLY valid JSON.`;
 }
 
-// Call LLM API
-async function callLLM(prompt) {
-    const endpoint = LLM_CONFIG.endpoint || getDefaultEndpoint();
-
-    if (LLM_CONFIG.provider === 'gemini') {
-        return await callGemini(prompt, endpoint);
-    } else if (LLM_CONFIG.provider === 'anthropic') {
-        return await callAnthropic(prompt, endpoint);
-    } else {
-        return await callOpenAI(prompt, endpoint);
-    }
-}
-
-// OpenAI API call
-async function callOpenAI(prompt, endpoint) {
-    const requestBody = {
-        model: LLM_CONFIG.model,
-        messages: [
-            {
-                role: 'user',
-                content: prompt
-            }
-        ],
-        temperature: 0.8,
-        max_tokens: 1500
-    };
-
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
-        },
-        body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-}
-
-// Anthropic Claude API call
-async function callAnthropic(prompt, endpoint) {
-    const requestBody = {
-        model: LLM_CONFIG.model,
-        messages: [
-            {
-                role: 'user',
-                content: prompt
-            }
-        ],
-        temperature: 0.8,
-        max_tokens: 1500
-    };
-
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': LLM_CONFIG.apiKey,
-            'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-        throw new Error(`Anthropic API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.content[0].text;
-}
-
-// Google Gemini API call
-async function callGemini(prompt, endpoint) {
-    const requestBody = {
-        contents: [{
-            parts: [{
-                text: prompt
-            }]
-        }],
-        generationConfig: {
-            temperature: 0.8,
-            maxOutputTokens: 1500,
-            responseMimeType: 'application/json'
-        }
-    };
-
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-        throw new Error(`Gemini API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
-}
-
-function getDefaultEndpoint() {
-    switch (LLM_CONFIG.provider) {
-        case 'openai':
-            return 'https://api.openai.com/v1/chat/completions';
-        case 'anthropic':
-            return 'https://api.anthropic.com/v1/messages';
-        case 'gemini':
-            // Gemini endpoint includes API key in URL
-            return `https://generativelanguage.googleapis.com/v1beta/models/${LLM_CONFIG.model}:generateContent?key=${LLM_CONFIG.apiKey}`;
-        default:
-            return 'https://api.openai.com/v1/chat/completions';
-    }
-}
 
 // Parse LLM responses
 function parsePersonalityResponse(response) {
@@ -321,7 +212,3 @@ function generateFallbackCompatibility(answers1, answers2, score) {
     };
 }
 
-// Utility: Check if LLM is configured
-function isLLMConfigured() {
-    return LLM_CONFIG.apiKey !== 'YOUR_API_KEY' && LLM_CONFIG.apiKey.length > 0;
-}

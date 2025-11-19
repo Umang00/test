@@ -1,8 +1,16 @@
 // Supabase Configuration
-// Replace these with your actual Supabase project credentials
+// Note: Supabase URL and ANON_KEY are safe to expose client-side
+// They are protected by Row Level Security (RLS) policies
+//
+// For Vercel deployment:
+// 1. Add SUPABASE_URL and SUPABASE_ANON_KEY to Vercel Environment Variables
+// 2. They will be automatically injected at build time
+//
+// For local development:
+// Replace the values below with your actual credentials from .env file
 
-const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // e.g., https://xxxxx.supabase.co
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = process.env.SUPABASE_URL || 'YOUR_SUPABASE_URL'; // e.g., https://xxxxx.supabase.co
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
 
 // Initialize Supabase client
 let supabase;

@@ -1,19 +1,38 @@
-// Email Service using Resend
+// Email Service using Resend API (via serverless function)
 // Sends custom transactional emails
+// API keys are stored securely in environment variables
 
-const RESEND_CONFIG = {
-    apiKey: 'YOUR_RESEND_API_KEY', // Set this in production
-    fromEmail: 'Compatibility Chaos <noreply@yourdomain.com>',
-    fromName: 'Compatibility Chaos'
-};
+// Helper function to send email via our API endpoint
+async function sendEmailViaAPI(to, subject, html) {
+    try {
+        const response = await fetch('/api/send-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                to,
+                subject,
+                html
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || `HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Email sent successfully:', data.messageId);
+        return data;
+    } catch (error) {
+        console.error('Failed to send email:', error);
+        throw error;
+    }
+}
 
 // Send notification when someone responds to a test
 async function sendResponseNotification(creatorEmail, creatorName, responderName, compatibilityScore, shareCode) {
-    if (!isResendConfigured()) {
-        console.log('Resend not configured - skipping email');
-        return;
-    }
-
     const dashboardUrl = `${window.location.origin}/dashboard`;
     const testUrl = `${window.location.origin}/?test=${shareCode}`;
 
@@ -71,40 +90,19 @@ async function sendResponseNotification(creatorEmail, creatorName, responderName
     `;
 
     try {
-        const response = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${RESEND_CONFIG.apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                from: RESEND_CONFIG.fromEmail,
-                to: creatorEmail,
-                subject: `🔥 ${responderName} took your compatibility test! (${compatibilityScore}% match)`,
-                html: emailHTML
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Email failed: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Email sent successfully:', data.id);
-        return data;
+        return await sendEmailViaAPI(
+            creatorEmail,
+            `🔥 ${responderName} took your compatibility test! (${compatibilityScore}% match)`,
+            emailHTML
+        );
     } catch (error) {
-        console.error('Failed to send email:', error);
+        console.error('Failed to send notification email:', error);
         // Don't throw - email is nice-to-have, not critical
     }
 }
 
 // Send welcome email to new users
 async function sendWelcomeEmail(userEmail, userName) {
-    if (!isResendConfigured()) {
-        console.log('Resend not configured - skipping email');
-        return;
-    }
-
     const createTestUrl = `${window.location.origin}`;
 
     const emailHTML = `
@@ -170,27 +168,11 @@ async function sendWelcomeEmail(userEmail, userName) {
     `;
 
     try {
-        const response = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${RESEND_CONFIG.apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                from: RESEND_CONFIG.fromEmail,
-                to: userEmail,
-                subject: '🎉 Welcome to Compatibility Chaos!',
-                html: emailHTML
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Email failed: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Welcome email sent:', data.id);
-        return data;
+        return await sendEmailViaAPI(
+            userEmail,
+            '🎉 Welcome to Compatibility Chaos!',
+            emailHTML
+        );
     } catch (error) {
         console.error('Failed to send welcome email:', error);
     }
@@ -198,7 +180,7 @@ async function sendWelcomeEmail(userEmail, userName) {
 
 // Send results to respondent
 async function sendResultsEmail(responderEmail, responderName, creatorName, compatibilityScore, personalityType) {
-    if (!isResendConfigured() || !responderEmail) {
+    if (!responderEmail) {
         return;
     }
 
@@ -254,33 +236,12 @@ async function sendResultsEmail(responderEmail, responderName, creatorName, comp
     `;
 
     try {
-        const response = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${RESEND_CONFIG.apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                from: RESEND_CONFIG.fromEmail,
-                to: responderEmail,
-                subject: `Your compatibility with ${creatorName}: ${compatibilityScore}%`,
-                html: emailHTML
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Email failed: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Results email sent:', data.id);
-        return data;
+        return await sendEmailViaAPI(
+            responderEmail,
+            `Your compatibility with ${creatorName}: ${compatibilityScore}%`,
+            emailHTML
+        );
     } catch (error) {
         console.error('Failed to send results email:', error);
     }
-}
-
-// Utility function
-function isResendConfigured() {
-    return RESEND_CONFIG.apiKey !== 'YOUR_RESEND_API_KEY' && RESEND_CONFIG.apiKey.length > 0;
 }
