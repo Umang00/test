@@ -39,6 +39,7 @@ export default [
                 btoa: 'readonly',
                 atob: 'readonly',
                 prompt: 'readonly',
+                confirm: 'readonly',
                 event: 'readonly',
                 location: 'readonly',
 
@@ -78,6 +79,24 @@ export default [
                 hideNavbar: 'readonly',
                 switchAuthTab: 'readonly',
                 checkForSharedLink: 'readonly',
+
+                // User settings functions
+                showUserSettings: 'readonly',
+                closeSettings: 'readonly',
+                handleChangePassword: 'readonly',
+                confirmAccountDeletion: 'readonly',
+                handleAccountDeletion: 'readonly',
+                showAuthLoading: 'readonly',
+                hideAuthLoading: 'readonly',
+                signInWithProviderEnhanced: 'readonly',
+                handleGoogleLoginEnhanced: 'readonly',
+                handleFacebookLoginEnhanced: 'readonly',
+                handleGitHubLoginEnhanced: 'readonly',
+                handleTwitterLoginEnhanced: 'readonly',
+                showFeedback: 'readonly',
+                hideFeedback: 'readonly',
+                populateUserInfo: 'readonly',
+                createSettingsPage: 'readonly',
 
                 // Analytics functions
                 trackAnswerPatterns: 'readonly',
