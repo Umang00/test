@@ -1,0 +1,24 @@
+{
+  "name": "compatibility-chaos",
+  "version": "1.0.0",
+  "description": "Viral compatibility quiz app with AI-powered insights",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "compatibility",
+    "quiz",
+    "ai",
+    "personality",
+    "gemini",
+    "vercel"
+  ],
+  "author": "",
+  "license": "MIT"
+}
