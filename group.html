@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Compatibility - Compatibility Chaos</title>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="group-style.css">
+
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Loading Indicator -->
+    <div id="loading" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p id="loading-message">Loading...</p>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- LANDING PAGE -->
+    <!-- ========================================== -->
+    <div id="group-landing-page" class="page">
+        <div class="container">
+            <div class="hero">
+                <h1>🎭 Group Compatibility</h1>
+                <p class="tagline">Test compatibility with 3-10 people at once!</p>
+                <p class="subtitle">See who meshes with the group and who brings the chaos</p>
+            </div>
+
+            <div class="landing-options">
+                <div class="option-card create-card" onclick="window.location.href='?mode=create'">
+                    <div class="card-icon">✨</div>
+                    <h2>Create Group Test</h2>
+                    <p>Start a new group compatibility test</p>
+                    <ul class="features">
+                        <li>Invite 2-9 friends</li>
+                        <li>Get unique group code</li>
+                        <li>See full compatibility matrix</li>
+                    </ul>
+                </div>
+
+                <div class="option-card join-card" onclick="showJoinInput()">
+                    <div class="card-icon">🔗</div>
+                    <h2>Join Group Test</h2>
+                    <p>Have a group code? Join here</p>
+                    <div id="quick-join" class="quick-join" style="display: none;">
+                        <input type="text" id="quick-join-code" placeholder="Enter group code" maxlength="8">
+                        <button onclick="quickJoin()">Join</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="back-link">
+                <a href="index-prod.html">← Back to 1-on-1 Test</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- CREATE GROUP PAGE -->
+    <!-- ========================================== -->
+    <div id="group-create-page" class="page" style="display: none;">
+        <div class="container">
+            <h1>Create Group Test</h1>
+            <p class="subtitle">Start a new group compatibility test</p>
+
+            <form id="create-group-form" onsubmit="handleCreateGroup(event)" class="form-card">
+                <div class="form-group">
+                    <label for="group-name">Group Name</label>
+                    <input type="text" id="group-name" placeholder="e.g., Squad Goals, Dream Team, Chaos Crew" required maxlength="50">
+                    <small>Give your group a fun name!</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="creator-name">Your Name</label>
+                    <input type="text" id="creator-name" placeholder="Your name" required maxlength="30">
+                </div>
+
+                <div class="form-group">
+                    <label for="max-members">Maximum Members</label>
+                    <select id="max-members">
+                        <option value="5">5 people</option>
+                        <option value="7">7 people</option>
+                        <option value="10" selected>10 people</option>
+                    </select>
+                    <small>Including yourself</small>
+                </div>
+
+                <button type="submit" class="btn-primary">Create Group</button>
+            </form>
+
+            <div class="back-link">
+                <a href="group.html">← Back</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- GROUP CREATED SUCCESS PAGE -->
+    <!-- ========================================== -->
+    <div id="group-created-page" class="page" style="display: none;">
+        <div class="container">
+            <div class="success-card">
+                <div class="success-icon">🎉</div>
+                <h1>Group Created!</h1>
+                <h2 id="created-group-name" class="group-name"></h2>
+
+                <div class="code-section">
+                    <p>Share this code with your friends:</p>
+                    <div class="code-display">
+                        <span id="created-group-code" class="group-code">ABC12XY7</span>
+                        <button onclick="copyGroupCode()" class="btn-copy">📋 Copy</button>
+                    </div>
+                </div>
+
+                <div class="share-section">
+                    <p>Or share this link:</p>
+                    <div class="url-display">
+                        <input type="text" id="group-share-url" readonly>
+                        <button onclick="copyShareUrl()" class="btn-copy">📋 Copy</button>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button onclick="startGroupQuiz()" class="btn-primary">Take Quiz Now</button>
+                    <button onclick="location.href='group.html'" class="btn-secondary">Create Another Group</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- JOIN GROUP PAGE -->
+    <!-- ========================================== -->
+    <div id="group-join-page" class="page" style="display: none;">
+        <div class="container">
+            <div class="join-card">
+                <h1 id="join-group-name">Loading...</h1>
+                <div class="group-info">
+                    <p>Group Code: <span id="join-group-code" class="group-code">...</span></p>
+                    <p id="join-members-count" class="members-count">0/10 members completed</p>
+                </div>
+
+                <div class="members-list">
+                    <h3>Group Members:</h3>
+                    <div id="join-members-list" class="members-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <form id="join-group-form" onsubmit="handleJoinGroup(event)" class="form-card">
+                    <h3>Join This Group</h3>
+
+                    <div class="form-group">
+                        <label for="join-member-name">Your Name</label>
+                        <input type="text" id="join-member-name" placeholder="Your name" required maxlength="30">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="join-member-email">Email (optional)</label>
+                        <input type="email" id="join-member-email" placeholder="your@email.com">
+                        <small>Get notified when results are ready</small>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Join & Take Quiz</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- QUIZ PAGE -->
+    <!-- ========================================== -->
+    <div id="quiz-page" class="page" style="display: none;">
+        <div class="container quiz-container">
+            <div class="quiz-header">
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <p class="question-number">Question <span id="question-num">1</span> of <span id="total-questions">15</span></p>
+            </div>
+
+            <div class="quiz-content">
+                <h2 id="question-text" class="question-text">Loading question...</h2>
+                <div id="options-container" class="options-container">
+                    <!-- Options populated by JS -->
+                </div>
+            </div>
+
+            <div class="quiz-footer">
+                <button id="prev-btn" onclick="previousQuestion()" class="btn-secondary" style="display: none;">← Previous</button>
+                <button id="next-btn" onclick="nextQuestion()" class="btn-primary" disabled>Next →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- WAITING FOR MEMBERS PAGE -->
+    <!-- ========================================== -->
+    <div id="group-waiting-page" class="page" style="display: none;">
+        <div class="container">
+            <div class="waiting-card">
+                <div class="waiting-icon">⏳</div>
+                <h1>Quiz Complete!</h1>
+                <p class="subtitle">Thanks for completing the quiz!</p>
+
+                <div class="waiting-stats">
+                    <div class="stat-box">
+                        <div class="stat-number" id="waiting-count">1</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                    <div class="stat-divider">→</div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="waiting-needed">2</div>
+                        <div class="stat-label">Still Needed</div>
+                    </div>
+                </div>
+
+                <p class="waiting-message">We need at least 3 members to complete the quiz before showing results.</p>
+
+                <div class="action-buttons">
+                    <button onclick="location.reload()" class="btn-primary">🔄 Check for Updates</button>
+                    <button onclick="copyCurrentUrl()" class="btn-secondary">📋 Copy Group Link</button>
+                </div>
+
+                <div class="tip-box">
+                    <strong>💡 Tip:</strong> Share the group link with more friends to speed things up!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- GROUP RESULTS PAGE -->
+    <!-- ========================================== -->
+    <div id="group-results-page" class="page" style="display: none;">
+        <div class="container results-container">
+            <!-- Header -->
+            <div class="results-header">
+                <h1 id="results-group-title" class="results-title">The Dream Team</h1>
+                <h2 id="results-group-name" class="group-name">Squad Goals</h2>
+                <p id="results-group-summary" class="results-summary">Loading analysis...</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card harmony">
+                    <div class="stat-icon">💕</div>
+                    <div class="stat-label">Group Harmony</div>
+                    <div class="stat-value" id="results-harmony-score">75%</div>
+                </div>
+
+                <div class="stat-card chaos">
+                    <div class="stat-icon">💥</div>
+                    <div class="stat-label">Chaos Level</div>
+                    <div class="stat-value" id="results-chaos-level">42/100</div>
+                </div>
+
+                <div class="stat-card members">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-label">Total Members</div>
+                    <div class="stat-value" id="results-members-count">5</div>
+                </div>
+
+                <div class="stat-card best-match">
+                    <div class="stat-icon">🔥</div>
+                    <div class="stat-label">Best Match</div>
+                    <div class="stat-value-small">
+                        <span id="results-best-pair">Alice & Bob</span>
+                        <span id="results-best-score" class="score-badge">92%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compatibility Matrix -->
+            <div class="results-section">
+                <h2 class="section-title">🎯 Compatibility Matrix</h2>
+                <p class="section-subtitle">See how everyone matches up</p>
+                <div id="compatibility-matrix" class="matrix-container">
+                    <!-- Populated by JS -->
+                </div>
+                <div class="matrix-legend">
+                    <span class="legend-item"><span class="color-box high"></span> 70-100% (High)</span>
+                    <span class="legend-item"><span class="color-box medium"></span> 40-69% (Medium)</span>
+                    <span class="legend-item"><span class="color-box low"></span> 0-39% (Low)</span>
+                </div>
+            </div>
+
+            <!-- Group Dynamics -->
+            <div class="results-section">
+                <h2 class="section-title">✨ Group Dynamics</h2>
+
+                <div class="dynamics-grid">
+                    <div class="dynamic-card strengths">
+                        <h3>💪 Strengths</h3>
+                        <ul id="results-strengths-list">
+                            <!-- Populated by JS -->
+                        </ul>
+                    </div>
+
+                    <div class="dynamic-card challenges">
+                        <h3>⚡ Challenges</h3>
+                        <ul id="results-challenges-list">
+                            <!-- Populated by JS -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advice -->
+            <div class="results-section">
+                <div class="advice-card">
+                    <h3>💡 Group Advice</h3>
+                    <p id="results-advice">Loading advice...</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button onclick="location.href='group.html'" class="btn-primary">Create New Group</button>
+                <button onclick="shareResults()" class="btn-secondary">📤 Share Results</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="supabase-config.js"></script>
+    <script src="questions-scenarios.js"></script>
+    <script src="llm-config.js"></script>
+    <script src="db-helpers.js"></script>
+    <script src="group-helpers.js"></script>
+    <script src="group-app.js"></script>
+
+    <script>
+        // Quick join from landing page
+        function showJoinInput() {
+            document.getElementById('quick-join').style.display = 'flex';
+            document.getElementById('quick-join-code').focus();
+        }
+
+        function quickJoin() {
+            const code = document.getElementById('quick-join-code').value.trim().toUpperCase();
+            if (code) {
+                window.location.href = `?group=${code}`;
+            }
+        }
+
+        // Copy current URL
+        function copyCurrentUrl() {
+            navigator.clipboard.writeText(window.location.href);
+            alert('Group link copied to clipboard!');
+        }
+
+        // Share results
+        function shareResults() {
+            const url = window.location.href;
+            const text = `Check out our group compatibility results on Compatibility Chaos!`;
+
+            if (navigator.share) {
+                navigator.share({ title: 'Group Compatibility Results', text: text, url: url });
+            } else {
+                navigator.clipboard.writeText(url);
+                alert('Results link copied to clipboard!');
+            }
+        }
+
+        // Quiz navigation (integrated with group-app.js)
+        let currentQuestion = 0;
+        let userAnswers = [];
+
+        function showQuestion(index) {
+            if (!window.questions || !questions.length) {
+                console.error('Questions not loaded');
+                return;
+            }
+
+            currentQuestion = index;
+            const question = questions[index];
+
+            document.getElementById('question-num').textContent = index + 1;
+            document.getElementById('total-questions').textContent = questions.length;
+            document.getElementById('question-text').textContent = question.question;
+
+            // Update progress bar
+            const progress = ((index + 1) / questions.length) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+
+            // Display options
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            question.options.forEach((option, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option.text;
+                btn.onclick = () => selectOption(i, option);
+
+                // Highlight if already selected
+                if (userAnswers[index] && userAnswers[index].value === option.value) {
+                    btn.classList.add('selected');
+                }
+
+                container.appendChild(btn);
+            });
+
+            // Update navigation buttons
+            document.getElementById('prev-btn').style.display = index > 0 ? 'block' : 'none';
+            document.getElementById('next-btn').disabled = !userAnswers[index];
+        }
+
+        function selectOption(optionIndex, option) {
+            const question = questions[currentQuestion];
+
+            userAnswers[currentQuestion] = {
+                questionIndex: currentQuestion,
+                category: question.category,
+                value: option.value,
+                text: option.text
+            };
+
+            // Update UI
+            document.querySelectorAll('.option-btn').forEach((btn, i) => {
+                btn.classList.toggle('selected', i === optionIndex);
+            });
+
+            document.getElementById('next-btn').disabled = false;
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < questions.length - 1) {
+                showQuestion(currentQuestion + 1);
+            } else {
+                // Quiz complete
+                completeQuiz();
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestion > 0) {
+                showQuestion(currentQuestion - 1);
+            }
+        }
+
+        function completeQuiz() {
+            handleGroupQuizComplete(userAnswers);
+        }
+    </script>
+</body>
+</html>
