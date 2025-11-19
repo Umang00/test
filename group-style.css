@@ -879,6 +879,148 @@ body {
    RESPONSIVE
    ============================================ */
 
+/* ============================================
+   NOTIFICATIONS & TOASTS
+   ============================================ */
+
+.update-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--card-bg);
+    border: 2px solid #4ade80;
+    border-radius: 15px;
+    padding: 1.5rem;
+    max-width: 400px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(500px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.notification-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #4ade80;
+}
+
+.notification-message {
+    color: var(--text-muted);
+}
+
+.notification-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.notification-actions button {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-dismiss {
+    background: transparent;
+    border: 2px solid var(--border-color);
+    color: var(--text-muted);
+}
+
+.btn-dismiss:hover {
+    border-color: var(--text-color);
+    color: var(--text-color);
+}
+
+.btn-update {
+    background: var(--success-gradient);
+    border: none;
+    color: white;
+}
+
+.btn-update:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(78, 222, 128, 0.4);
+}
+
+.toast-message {
+    position: fixed;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card-bg);
+    border: 2px solid #4ade80;
+    padding: 1rem 2rem;
+    border-radius: 25px;
+    font-weight: 600;
+    z-index: 10001;
+    transition: bottom 0.3s ease-out;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.toast-message.show {
+    bottom: 30px;
+}
+
+.refresh-button {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    padding: 1rem 1.5rem;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    z-index: 1000;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.refresh-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+}
+
+.refresh-button .icon {
+    font-size: 1.2rem;
+    animation: rotate 2s linear infinite paused;
+}
+
+.refresh-button:hover .icon {
+    animation-play-state: running;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
 @media (max-width: 768px) {
     .hero h1 {
         font-size: 2.5rem;
@@ -924,5 +1066,18 @@ body {
     .group-code {
         font-size: 1.8rem;
         letter-spacing: 0.2rem;
+    }
+
+    .update-notification {
+        left: 10px;
+        right: 10px;
+        max-width: none;
+    }
+
+    .refresh-button {
+        bottom: 20px;
+        right: 20px;
+        padding: 0.75rem 1.25rem;
+        font-size: 0.9rem;
     }
 }

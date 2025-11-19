@@ -321,10 +321,17 @@
 
             <!-- Action Buttons -->
             <div class="action-buttons">
+                <button onclick="manualCheckForUpdates()" class="btn-secondary">🔄 Check for Updates</button>
                 <button onclick="location.href='group.html'" class="btn-primary">Create New Group</button>
                 <button onclick="shareResults()" class="btn-secondary">📤 Share Results</button>
             </div>
         </div>
+
+        <!-- Floating Refresh Button (shown on scroll) -->
+        <button onclick="refreshResults()" class="refresh-button" id="floating-refresh" style="display: none;">
+            <span class="icon">🔄</span>
+            <span>Refresh</span>
+        </button>
     </div>
 
     <!-- Scripts -->

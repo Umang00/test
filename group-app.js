@@ -289,7 +289,13 @@ function displayGroupResults(details, analysis, stats) {
     // Advice
     document.getElementById('results-advice').textContent = analysis.advice;
 
+    // Store current member count for auto-update detection
+    window.currentMemberCount = stats.totalMembers;
+
     showPage('group-results-page');
+
+    // Start auto-polling for new members
+    startAutoPolling();
 }
 
 // Display compatibility matrix
@@ -386,4 +392,152 @@ function showError(message) {
 // Show info message
 function showInfo(message) {
     alert(message);
+}
+
+// ============================================
+// AUTO-UPDATE & POLLING SYSTEM
+// ============================================
+
+let pollingInterval = null;
+let lastMemberCount = 0;
+
+// Start auto-polling for new members
+function startAutoPolling() {
+    // Stop any existing polling
+    stopAutoPolling();
+
+    // Store initial member count
+    lastMemberCount = window.currentMemberCount || 0;
+
+    // Poll every 60 seconds
+    pollingInterval = setInterval(async () => {
+        await checkForNewMembers();
+    }, 60000); // 60 seconds
+
+    console.log('Auto-polling started - checking for updates every 60 seconds');
+}
+
+// Stop auto-polling
+function stopAutoPolling() {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+        console.log('Auto-polling stopped');
+    }
+}
+
+// Check for new members (called by auto-polling or manual refresh)
+async function checkForNewMembers() {
+    if (!window.currentGroupId) return;
+
+    try {
+        const completedMembers = await getCompletedMembers(window.currentGroupId);
+        const newMemberCount = completedMembers.length;
+
+        if (newMemberCount > lastMemberCount) {
+            // New member(s) completed!
+            const newMembersAdded = newMemberCount - lastMemberCount;
+            const memberNames = completedMembers
+                .slice(-newMembersAdded)
+                .map(m => m.member_name)
+                .join(', ');
+
+            showNotification(
+                `🎉 ${newMembersAdded} new member(s) completed: ${memberNames}`,
+                'Updating results...',
+                () => refreshResults()
+            );
+        }
+    } catch (error) {
+        console.error('Error checking for new members:', error);
+    }
+}
+
+// Manual refresh button handler
+async function refreshResults() {
+    if (!window.currentGroupId) {
+        location.reload();
+        return;
+    }
+
+    try {
+        showLoading('Refreshing results...');
+
+        // Recalculate compatibility matrix with all members
+        await calculateGroupCompatibility(window.currentGroupId);
+
+        // Reload results
+        await showGroupResults(window.currentGroupId);
+
+        hideLoading();
+        showToast('✅ Results updated!');
+    } catch (error) {
+        hideLoading();
+        showError('Failed to refresh results: ' + error.message);
+    }
+}
+
+// Show notification with action button
+function showNotification(title, message, onAction) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'update-notification';
+    notification.innerHTML = `
+        <div class="notification-content">
+            <div class="notification-title">${title}</div>
+            <div class="notification-message">${message}</div>
+            <div class="notification-actions">
+                <button onclick="this.closest('.update-notification').remove()" class="btn-dismiss">Later</button>
+                <button class="btn-update">Update Now</button>
+            </div>
+        </div>
+    `;
+
+    // Add to page
+    document.body.appendChild(notification);
+
+    // Handle update button
+    const updateBtn = notification.querySelector('.btn-update');
+    updateBtn.onclick = () => {
+        notification.remove();
+        if (onAction) onAction();
+    };
+
+    // Auto-dismiss after 15 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 15000);
+}
+
+// Show toast message (brief notification)
+function showToast(message, duration = 3000) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-message';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    setTimeout(() => toast.classList.add('show'), 100);
+
+    // Remove after duration
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+// Stop polling when leaving results page
+window.addEventListener('beforeunload', () => {
+    stopAutoPolling();
+});
+
+// Manual check for updates button handler (for results page)
+function manualCheckForUpdates() {
+    showLoading('Checking for updates...');
+    checkForNewMembers().then(() => {
+        hideLoading();
+        showToast('No new updates');
+    });
 }
