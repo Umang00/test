@@ -6,7 +6,12 @@
   "type": "module",
   "scripts": {
     "dev": "vercel dev",
-    "deploy": "vercel --prod"
+    "deploy": "vercel --prod",
+    "lint": "eslint '**/*.js' --ignore-pattern 'node_modules/'",
+    "lint:fix": "eslint '**/*.js' --fix --ignore-pattern 'node_modules/'",
+    "validate": "node scripts/validate.js",
+    "build": "npm run lint && npm run validate",
+    "precommit": "npm run build"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -19,6 +24,9 @@
     "gemini",
     "vercel"
   ],
+  "devDependencies": {
+    "eslint": "^8.55.0"
+  },
   "author": "",
   "license": "MIT"
 }
